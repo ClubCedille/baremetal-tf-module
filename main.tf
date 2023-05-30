@@ -118,73 +118,7 @@ resource "mikrotik_dns_record" "worker-records" {
 // TALOS
 // ------------
 
-resource "talos_machine_secrets" "secrets" {}
 
-data "talos_machine_configuration" "controlplane" {
-    cluster_name = var.cluster_name
-    cluster_endpoint = var.cluster_endpoint
-    talos_version = var.talos_version
-    machine_type = "controlplane"
-    machine_secrets = talos_machine_secrets.secrets.machine_secrets
-}
-
-data "talos_machine_configuration" "worker" {
-    cluster_name = var.cluster_name
-    cluster_endpoint = var.cluster_endpoint
-    talos_version = var.talos_version
-    machine_type = "worker"
-    machine_secrets = talos_machine_secrets.secrets.machine_secrets
-}
-
-# data "talos_client_configuration" "this" {
-#   cluster_name         = var.cluster_name
-#   client_configuration = talos_machine_secrets.this.client_configuration
-#   endpoints            = [for k, v in var.node_data.controlplanes : k]
-# }
-
-resource "talos_machine_configuration_apply" "controlplane" {
-  count                       = var.controlplane.nb_vms
-  client_configuration        = talos_machine_secrets.secrets.client_configuration
-  machine_configuration_input = data.talos_machine_configuration.controlplane.machine_configuration
-  node                        = format("%s-cp-%s", var.cluster_name, count.index)
-  config_patches = [
-    templatefile("machine_config.yaml.tmpl", {
-      hostname     = format("%s-cp-%s", var.cluster_name, count.index)
-      install_disk = "/dev/xvda"
-      certSANs = local.certSANs
-      oidc-issuer-url = var.oidc-issuer-url
-      oidc-client-id = var.oidc-client-id
-    })
-  ]
-}
-
-resource "talos_machine_configuration_apply" "worker" {
-  count                       = var.worker.nb_vms
-  client_configuration        = talos_machine_secrets.secrets.client_configuration
-  machine_configuration_input = data.talos_machine_configuration.worker.machine_configuration
-  node                        = format("%s-cp-%s", var.cluster_name, count.index)
-  config_patches = [
-    templatefile("machine_config.yaml.tmpl", {
-      hostname     = format("%s-worker-%s", var.cluster_name, count.index)
-      install_disk = "/dev/xvda"
-      certSANs = local.certSANs
-      oidc-issuer-url = var.oidc-issuer-url
-      oidc-client-id = var.oidc-client-id
-    })
-  ]
-}
-
-resource "talos_machine_bootstrap" "bootstrap" {
-  depends_on = [talos_machine_configuration_apply.controlplane]
-  client_configuration = talos_machine_secrets.secrets.client_configuration
-  node                 = talos_machine_configuration_apply.controlplane[0].node
-}
-
-data "talos_cluster_kubeconfig" "kubeconfig" {
-  client_configuration = talos_machine_secrets.secrets.client_configuration
-  node                 = talos_machine_configuration_apply.controlplane[0].node
-  wait                 = true
-}
 
 // ------------
 // XEN
@@ -194,15 +128,15 @@ data "xenorchestra_template" "other-template" {
   name_label = "Other install media"
 }
 
-resource "null_resource" "talos-iso" {
-  triggers = {
-    on_version_change = "${var.talos_version}"
-  }
+# resource "null_resource" "talos-iso" {
+#   triggers = {
+#     on_version_change = "${var.talos_version}"
+#   }
 
-  provisioner "local-exec" {
-    command = "curl -L -o talos.iso ${var.talos_repo}/releases/download/v${var.talos_version}/talos-amd64.iso"
-  }
-}
+#   provisioner "local-exec" {
+#     command = "curl -L -o talos.iso ${var.talos_repo}/releases/download/v${var.talos_version}/talos-amd64.iso"
+#   }
+# }
 
 data "xenorchestra_hosts" "pool" {
   pool_id = var.xen_pool_id

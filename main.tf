@@ -17,51 +17,51 @@ terraform {
       source = "ivoronin/macaddress"
       version = "0.3.2"
     }
-    mikrotik = {
-      source = "ddelnano/mikrotik"
-      version = "0.10.0"
+    routeros = {
+      source = "terraform-routeros/routeros"
+      version = "1.10.4"
     }
   }
 }
 
 locals {
-  certSANs = concat(mikrotik_dns_record.controlplane-records[*].name, mikrotik_dns_record.worker-records[*].name, var.cluster_endpoint)
+  certSANs = concat(routeros_dns_record.controlplane-records[*].name, routeros_dns_record.worker-records[*].name, var.cluster_endpoint)
 }
 
 // ------------
 // MIKROTIK
 // ------------
 
-resource "mikrotik_bridge" "bridge" {
+resource "routeros_bridge" "bridge" {
   name           = "xen_bridge"
   fast_forward   = true
   vlan_filtering = true
   comment        = "Xen bridge"
 }
 
-resource mikrotik_bridge_port "eth2port" {
-  bridge    = mikrotik_bridge.bridge.name
-  for_each = toset(var.mikrotik_network_interfaces)
+resource routeros_bridge_port "eth2port" {
+  bridge    = routeros_bridge.bridge.name
+  for_each = toset(var.routeros_network_interfaces)
   interface = each.key
   pvid      = var.vlan
   comment   = "bridge port"
 }
 
-resource "mikrotik_pool" "bar" {
+resource "routeros_pool" "bar" {
   name    = "dhcp-pool"
   ranges  = "${cidrhost(var.subnet, 0)}-${cidrhost(var.subnet, -1)}"
   comment = "Home devices"
 }
 
-resource "mikrotik_dhcp_server" "default" {
-  address_pool  = mikrotik_pool.bar.name
+resource "routeros_dhcp_server" "default" {
+  address_pool  = routeros_pool.bar.name
   authoritative = "yes"
   disabled      = false
   interface     = var.net_interfaces
   name          = "main-dhcp-server"
 }
 
-resource "mikrotik_dhcp_server_network" "default" {
+resource "routeros_dhcp_server_network" "default" {
   address    = var.subnet
   gateway    = cidrhost(var.subnet, 1)
   dns_server = cidrhost(var.subnet, 1)
@@ -73,7 +73,7 @@ resource "macaddress" "controlplanes" {
   prefix = [0, 22, 62]
 }
 
-resource "mikrotik_dhcp_lease" "controlplanes" {
+resource "routeros_dhcp_lease" "controlplanes" {
   count = var.controlplane.nb_vms
   address    = cidrhost(var.subnet, count.index + 2)
   macaddress = macaddress.controlplanes[count.index].address
@@ -86,7 +86,7 @@ resource "macaddress" "workers" {
   prefix = [0, 22, 62]
 }
 
-resource "mikrotik_dhcp_lease" "workers" {
+resource "routeros_dhcp_lease" "workers" {
   count = var.worker.nb_vms
   address    = cidrhost(var.subnet, count.index + var.max_controlplanes)
   macaddress = macaddress.workers[count.index].address
@@ -94,23 +94,23 @@ resource "mikrotik_dhcp_lease" "workers" {
   blocked    = "false"
 }
 
-resource "mikrotik_dns_record" "cluster-record" {
+resource "routeros_dns_record" "cluster-record" {
   name    = var.cluster_endpoint
-  address = mikrotik_dhcp_lease.controlplanes[0].address
+  address = routeros_dhcp_lease.controlplanes[0].address
   ttl     = 300
 }
 
-resource "mikrotik_dns_record" "controlplane-records" {
+resource "routeros_dns_record" "controlplane-records" {
   count = var.worker.nb_vms
   name    = format("%s-cp-%s.%s", var.cluster_name, count.index, var.cluster_endpoint)
-  address = mikrotik_dhcp_lease.controlplanes[count.index].address
+  address = routeros_dhcp_lease.controlplanes[count.index].address
   ttl     = 300
 }
 
-resource "mikrotik_dns_record" "worker-records" {
+resource "routeros_dns_record" "worker-records" {
   count = var.worker.nb_vms
   name    = format("%s-worker-%s.%s", var.cluster_name, count.index, var.cluster_endpoint)
-  address = mikrotik_dhcp_lease.workers[count.index].address
+  address = routeros_dhcp_lease.workers[count.index].address
   ttl     = 300
 }
 
@@ -159,7 +159,7 @@ resource "xenorchestra_vm" "controlplane" {
   template = data.xenorchestra_template.other-template.id
   network {
     network_id =var.network_id
-    mac_address = mikrotik_dhcp_lease.controlplanes[count.index].macaddress
+    mac_address = routeros_dhcp_lease.controlplanes[count.index].macaddress
     attached = true
   }
   cdrom {
@@ -183,7 +183,7 @@ resource "xenorchestra_vm" "worker" {
   template = data.xenorchestra_template.other-template.id
   network {
     network_id = var.network_id
-    mac_address = mikrotik_dhcp_lease.workers[count.index].macaddress
+    mac_address = routeros_dhcp_lease.workers[count.index].macaddress
     attached = true
   }
   cdrom {

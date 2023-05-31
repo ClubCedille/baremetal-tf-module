@@ -78,6 +78,6 @@ variable "vlan" {
   type = number
 }
 
-variable "mikrotik_network_interfaces" {
+variable "routeros_network_interfaces" {
   type = list(string)
 }

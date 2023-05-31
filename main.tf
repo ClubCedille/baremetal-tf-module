@@ -47,6 +47,13 @@ resource routeros_bridge_port "eth2port" {
   comment   = "bridge port"
 }
 
+resource "routeros_interface_bridge_vlan" "bridge_vlan" {
+  vlan_ids = "0-4094"
+  bridge = "xen_bridge"
+  tagged = concat(["bridge"], routeros_network_interfaces)
+  untagged = []
+}
+
 resource "routeros_pool" "bar" {
   name    = "dhcp-pool"
   ranges  = "${cidrhost(var.subnet, 0)}-${cidrhost(var.subnet, -1)}"

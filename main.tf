@@ -6,8 +6,8 @@ terraform {
       version = "0.2.0"
     }
     xenorchestra = {
-      source = "terra-farm/xenorchestra"
-      version = "0.24.1"
+      source = "Antoine-BL/xenorchestra"
+      version = "1.0.0"
     }
     http = {
       source = "hashicorp/http"
@@ -122,6 +122,14 @@ resource "routeros_dns_record" "worker-records" {
 }
 
 // ------------
+// SIDERO OMNI
+// ------------
+
+resource "null_resource" "omni-cluster" {
+  
+}
+
+// ------------
 // TALOS
 // ------------
 
@@ -135,21 +143,39 @@ data "xenorchestra_template" "other-template" {
   name_label = "Other install media"
 }
 
-# resource "null_resource" "talos-iso" {
-#   triggers = {
-#     on_version_change = "${var.talos_version}"
-#   }
 
-#   provisioner "local-exec" {
-#     command = "curl -L -o talos.iso ${var.talos_repo}/releases/download/v${var.talos_version}/talos-amd64.iso"
-#   }
-# }
+resource "null_resource" "talos-iso" {
+  triggers = {
+    on_version_change = "${var.talos_version}"
+  }
+
+  provisioner "local-exec" {
+    command = <<-EOT
+      ./create-talos-disk.sh --PUT PARAMS HERE
+    EOT
+  }
+}
 
 data "xenorchestra_hosts" "pool" {
   pool_id = var.xen_pool_id
 
   sort_by = "name_label"
   sort_order = "asc"
+}
+
+data "xenorchestra_pif" "net_devices" {
+  for_each = { for server in var.servers : server.host_id => server if length(setintersection(var.server.tags, setunion(var.controlplane.tags_match, var.workers.tags_match))) > 0}
+  device = each.value.network_devices[0] //TODO: when using new provider, support multiple devices
+  vlan   = 100 //Might need to be -1. Need to check what PIFs exist in
+  host_id = each.value.host_id
+}
+
+resource "xenorchestra_network" "network" {
+  for_each = toset(data.xenorchestra_pif.net_devices)
+  name_label = "${var.cluster_name}-network"
+  pif = each.value.id
+  description = "Network for ${var.cluster_name}"
+  vlan = var.vlan
 }
 
 resource "xenorchestra_vdi" "talos-iso" {

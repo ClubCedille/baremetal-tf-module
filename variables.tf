@@ -16,6 +16,11 @@ variable "talos_repo" {
   default = "https://github.com/siderolabs/talos"
 }
 
+variable "sidero_omni_url"{
+  type = string
+  default = "https://cedille.omni.siderolabs.io"
+}
+
 variable "controlplane" {
   type = object({
     nb_vms = number
@@ -23,6 +28,7 @@ variable "controlplane" {
     cpus = number
     memory_max = number
     disk_gb = number
+    tags_match = list(string)
   })
 }
 
@@ -33,7 +39,16 @@ variable "worker" {
     cpus = number
     memory_max = number
     disk_gb = number
+    tags_match = list(string)
   })
+}
+
+variable "servers" {
+  type = list(object({
+      network_devices = list(string)
+      host_id = string
+      tags = list(string)
+    }))
 }
 
 variable "oidc-issuer-url" {
@@ -80,4 +95,9 @@ variable "vlan" {
 
 variable "routeros_network_interfaces" {
   type = list(string)
+}
+
+variable "omnictl_download" {
+  type = string
+  default = "https://cedille.omni.siderolabs.io/omnictl/omnictl-linux-amd64"
 }

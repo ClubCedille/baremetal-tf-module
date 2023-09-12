@@ -6,8 +6,8 @@ terraform {
       version = "0.2.0"
     }
     xenorchestra = {
-      source = "terra-farm/xenorchestra"
-      version = "0.24.1"
+      source = "Antoine-BL/xenorchestra"
+      version = "1.0.0"
     }
     http = {
       source = "hashicorp/http"
@@ -125,85 +125,3 @@ resource "routeros_dns_record" "worker-records" {
 // TALOS
 // ------------
 
-
-
-// ------------
-// XEN
-// ------------
-
-data "xenorchestra_template" "other-template" {
-  name_label = "Other install media"
-}
-
-# resource "null_resource" "talos-iso" {
-#   triggers = {
-#     on_version_change = "${var.talos_version}"
-#   }
-
-#   provisioner "local-exec" {
-#     command = "curl -L -o talos.iso ${var.talos_repo}/releases/download/v${var.talos_version}/talos-amd64.iso"
-#   }
-# }
-
-data "xenorchestra_hosts" "pool" {
-  pool_id = var.xen_pool_id
-
-  sort_by = "name_label"
-  sort_order = "asc"
-}
-
-resource "xenorchestra_vdi" "talos-iso" {
-  filepath = "talos.iso"
-  depends_on = [ null_resource.talos-iso ]
-  sr_id = var.iso_sr_id
-  name_label = "talos-${var.talos_version}.iso"
-  type = "raw"
-}
-
-resource "xenorchestra_vm" "controlplane" {
-  count = var.controlplane.nb_vms
-  name_label = format("%s-cp-%s", var.cluster_name, count.index)
-  template = data.xenorchestra_template.other-template.id
-  network {
-    network_id =var.network_id
-    mac_address = routeros_dhcp_lease.controlplanes[count.index].macaddress
-    attached = true
-  }
-  cdrom {
-    id = xenorchestra_vdi.talos-iso.id
-  }
-  disk {
-    attached = true
-    name_label = "talos"
-    size = var.controlplane.disk_gb * 1000000000 //GB -> B
-    sr_id = var.disks_sr_id
-  }
-  cpus = var.controlplane.cpus
-  memory_max = var.controlplane.memory_max
-  auto_poweron = true
-  affinity_host = data.xenorchestra_hosts.pool.hosts[count.index % length(data.xenorchestra_hosts.pool.hosts)]
-}
-
-resource "xenorchestra_vm" "worker" {
-  count = var.worker.nb_vms
-  name_label = format("%s-worker-%s", var.cluster_name, count.index)
-  template = data.xenorchestra_template.other-template.id
-  network {
-    network_id = var.network_id
-    mac_address = routeros_dhcp_lease.workers[count.index].macaddress
-    attached = true
-  }
-  cdrom {
-    id = xenorchestra_vdi.talos-iso.id
-  }
-  disk {
-    attached = true
-    name_label = "talos"
-    size = var.worker.disk_gb * 1000000000 //GB -> B
-    sr_id = var.disks_sr_id
-  }
-  cpus = var.worker.cpus
-  memory_max = var.worker.memory_max
-  auto_poweron = true
-  affinity_host = data.xenorchestra_hosts.pool.hosts[count.index % length(data.xenorchestra_hosts.pool.hosts)]
-}

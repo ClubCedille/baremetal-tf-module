@@ -1,8 +1,0 @@
-apiVersion: metallb.io/v1beta1
-kind: IPAddressPool
-metadata:
-  name: sandbox
-  namespace: main
-spec:
-  addresses:
-  - 11.1.1.1/8

@@ -21,6 +21,10 @@ terraform {
       source  = "hashicorp/kubernetes"
       version = "2.23.0"
     }
+    helm = {
+      source  = "hashicorp/helm"
+      version = "2.11.0"
+    }
   }
 }
 
@@ -29,12 +33,20 @@ locals {
 }
 
 provider "kubernetes" {
-        host = local.kube_config.clusters[1].cluster.server
-        username = local.kube_config.users[1].name
-        token = local.kube_config.users[1].token
+    host = local.kube_config.clusters[1].cluster.server
+    username = local.kube_config.users[1].name
+    token = local.kube_config.users[1].token
 
-        #config_context = local.kube_config.contexts[1]
-    }
+    #config_context = local.kube_config.contexts[1]
+}
+
+provider "helm" {
+  kubernetes {
+    host = local.kube_config.clusters[1].cluster.server
+    username = local.kube_config.users[1].name
+    token = local.kube_config.users[1].token
+  }
+}
 
 provider "routeros" {
   hosturl  = "https://${var.router_host}" # Or set MIKROTIK_HOST environment variable

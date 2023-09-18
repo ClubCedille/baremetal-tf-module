@@ -45,6 +45,13 @@ variable "servers" {
   }))
 }
 
+variable "vclusters" {
+  type = list(object({
+    name = string
+    namespace = string
+  }))
+}
+
 variable "vlan" {
   type = number
 }

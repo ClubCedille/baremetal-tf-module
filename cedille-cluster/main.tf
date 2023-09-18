@@ -16,5 +16,7 @@ module "cedille-cluster" {
   vlan = 10
 
   servers = var.servers
+
+  vclusters = var.vclusters
 }
 

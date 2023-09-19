@@ -1,6 +1,6 @@
 omni_cluster_name = "cedille-cluster"
 omni_cluster_endpoint = "https://cedille.kubernetes.omni.siderolabs.io"
-omni_sa_kubeconfig = "../../cedille-cluster-tf-sa.kubeconfig.yaml"
+omni_sa_kubeconfig = "~/cedille-cluster-tf-sa.kubeconfig.yaml"
 
 network_config = {
   dns = "192.168.88.1"

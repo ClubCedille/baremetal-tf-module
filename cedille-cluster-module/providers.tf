@@ -28,23 +28,13 @@ terraform {
   }
 }
 
-locals {
-    kube_config = yamldecode(file(var.omni_sa_kubeconfig))
-}
-
 provider "kubernetes" {
-    host = local.kube_config.clusters[1].cluster.server
-    username = local.kube_config.users[1].name
-    token = local.kube_config.users[1].token
-
-    #config_context = local.kube_config.contexts[1]
+    config_path = var.omni_sa_kubeconfig
 }
 
 provider "helm" {
   kubernetes {
-    host = local.kube_config.clusters[1].cluster.server
-    username = local.kube_config.users[1].name
-    token = local.kube_config.users[1].token
+    config_path = var.omni_sa_kubeconfig
   }
 }
 

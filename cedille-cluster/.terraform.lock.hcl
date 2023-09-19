@@ -5,6 +5,7 @@ provider "registry.terraform.io/hashicorp/helm" {
   version     = "2.11.0"
   constraints = "2.11.0"
   hashes = [
+    "h1:/bxsVBBNaKwLwKapK7mR0ZrE+jhkThD0lfc6rVBD/kU=",
     "h1:zxfRtgpWrVZwjkIBuI+7jc52+u1QBA/k7LQZiCiq3Z8=",
     "zh:013857c88f3e19a4b162344e21dc51891c4ac8b600da8391f7fb2b6d234961e1",
     "zh:044fffa233a93cdcf8384afbe9e1ab6c9d0b5b176cbae56ff465eb9611302975",

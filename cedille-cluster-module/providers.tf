@@ -39,7 +39,7 @@ provider "helm" {
 }
 
 provider "routeros" {
-  hosturl  = "https://${var.router_host}" # Or set MIKROTIK_HOST environment variable
+  hosturl  = "http://${var.router_host}" # Or set MIKROTIK_HOST environment variable
   username = var.router_host              # Or set MIKROTIK_USER environment variable
   password = var.router_password          # Or set MIKROTIK_PASSWORD environment variable
   insecure = true                         # Or set MIKROTIK_INSECURE environment variable

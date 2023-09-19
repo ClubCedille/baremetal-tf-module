@@ -3,17 +3,17 @@
 # 
 # }
 
-resource "helm_release" "vclusters" {
-  for_each  = { for c in var.vclusters : c.name => c.namespace }
+# resource "helm_release" "vclusters" {
+#   for_each  = { for c in var.vclusters : c.name => c.namespace }
   
-  name       = each.key
-  namespace  = each.value
+#   name       = each.key
+#   namespace  = each.value
 
-  repository = "https://charts.loft.sh"
-  chart      = "vcluster"
-  create_namespace = true
+#   repository = "https://charts.loft.sh"
+#   chart      = "vcluster"
+#   create_namespace = true
   
-  values = [
-    "${file("${path.module}/k8s/vcluster.yaml.tmpl")}"
-  ]
-}
+#   values = [
+#     "${file("${path.module}/k8s/vcluster.yaml.tmpl")}"
+#   ]
+# }

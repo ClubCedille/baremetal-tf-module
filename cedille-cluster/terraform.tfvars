@@ -47,14 +47,3 @@ servers = [
     switch_port = "ether9"
   }
 ]
-
-vclusters = [
-  {
-    name = "vcluster-prod",
-    namespace = "prod"
-  },
-  {
-    name = "vcluster-sandbox",
-    namespace = "sandbox"
-  }
-]
